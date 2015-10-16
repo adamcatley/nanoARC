@@ -32,9 +32,7 @@
 /** ============================================================================
  *  @file       Board.h
  *
- *  @brief      CC2650EM_7ID Board Specific header file.
- *              The project options should point to this file if this is the
- *              CC2650EM you are developing code for.
+ *  @brief      nanoARCv1 Board Specific header file.
  *
  *  The CC2650 header file should be included in an application as follows:
  *  @code
@@ -43,8 +41,8 @@
  *
  *  ============================================================================
  */
-#ifndef __CC2650EM_7ID_H__
-#define __CC2650EM_7ID_H__
+#ifndef __BOARD_H__
+#define __BOARD_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +51,9 @@ extern "C" {
 /** ============================================================================
  *  Symbol by generic Board.c to include the correct kit specific Board.c
  *  ==========================================================================*/
-#define CC2650EM_7ID
-
+#define CC2650EM_7ID //declare internal bias and differential output used
+#define CC2650ST_7ID
+#define NANOARCV1 //board identifier
 
 /** ============================================================================
  *  Includes
@@ -74,86 +73,45 @@ extern PIN_Config BoardGpioInitTable[];
 /* Mapping of pins to board signals using general board aliases
  *      <board signal alias>                <pin mapping>
  */
-// Leds
-#define Board_LED_ON                        1 /* LEDs on CC2650 are active high */
-#define Board_LED_OFF                       0
-#define Board_LED1                          IOID_25
-#define Board_LED2                          IOID_27
-#define Board_LED3                          IOID_7
-#define Board_LED4                          IOID_6
-// Button Board
-#define Board_KEY_SELECT                    IOID_11
-#define Board_KEY_UP                        IOID_19
-#define Board_KEY_DOWN                      IOID_12
-#define Board_KEY_LEFT                      IOID_15
-#define Board_KEY_RIGHT                     IOID_18
-// LCD  Board
-#define Board_3V3_EN                        IOID_13
-#define Board_LCD_MODE                      IOID_4
-#define Board_LCD_RST                       IOID_5
-#define Board_LCD_CSN                       IOID_14
-// UART Board
-#define Board_UART_RX                       IOID_2
-#define Board_UART_TX                       IOID_3
-#define Board_UART_CTS                      IOID_0
-#define Board_UART_RTS                      IOID_21
-// SPI Board
-#define Board_SPI0_MISO                     IOID_8
-#define Board_SPI0_MOSI                     IOID_9
-#define Board_SPI0_CLK                      IOID_10
-#define Board_SPI0_CSN                      IOID_11
-#define Board_SPI1_MISO                     IOID_24
-#define Board_SPI1_MOSI                     IOID_23
-#define Board_SPI1_CLK                      IOID_30
-#define Board_SPI1_CSN                      IOID_26
+
+/* Motor driver control pins */
+#define Board_MOTOR1_PH             IOID_1
+#define Board_MOTOR1_EN             IOID_2
+#define Board_MOTOR2_PH             IOID_3
+#define Board_MOTOR2_EN             IOID_4
+
+/* GPIOs */
+#define Board_GPIO_0				IOID_0
+#define Board_GPIO_1				IOID_8
+#define Board_GPIO_2				IOID_7
+#define Board_GPIO_3				IOID_6
+#define Board_GPIO_4				IOID_5
+
+/* Mode specific pin use for expansion boards */
+
+//Transmitter expansion board
+#define Board_UART_TX				Board_GPIO_1
+#define Board_UART_RX				Board_GPIO_2
+
+//Motor driver expansion board
+#define Board_MOTOR1_PH             Board_GPIO_1
+#define Board_MOTOR1_EN             Board_GPIO_2
+#define Board_MOTOR2_PH             Board_GPIO_3
+#define Board_MOTOR2_EN             Board_GPIO_4
+
+/* Analog */
+#define Board_BATTERY				IOID_9
 
 /** ============================================================================
  *  Instance identifiers
  *  ==========================================================================*/
-/* Generic I2C instance identifiers */
-#define Board_I2C                   CC2650_I2C0
-/* Generic SPI instance identifiers */
-#define Board_SPI0                  CC2650_SPI0
-#define Board_SPI1                  CC2650_SPI1
 /* Generic UART instance identifiers */
 #define Board_UART                  CC2650_UART0
-/* Generic Crypto instance identifiers */
-#define Board_CRYPTO                CC2650_CRYPTO0
-/* Generic Watchdog instance identifiers */
-#define Board_WATCHDOG              CC2650_WATCHDOG0
 
 
 /** ============================================================================
  *  Number of peripherals and their names
  *  ==========================================================================*/
-
-/*!
- *  @def    CC2650_I2CName
- *  @brief  Enum of I2C names on the CC2650 dev board
- */
-typedef enum CC2650_I2CName {
-    CC2650_I2C0 = 0,
-    CC2650_I2CCOUNT
-} CC2650_I2CName;
-
-/*!
- *  @def    CC2650_CryptoName
- *  @brief  Enum of Crypto names on the CC2650 dev board
- */
-typedef enum CC2650_CryptoName {
-    CC2650_CRYPTO0 = 0,
-    CC2650_CRYPTOCOUNT
-} CC2650_CryptoName;
-
-/*!
- *  @def    CC2650_SPIName
- *  @brief  Enum of SPI names on the CC2650 dev board
- */
-typedef enum CC2650_SPIName {
-    CC2650_SPI0 = 0,
-    CC2650_SPI1,
-    CC2650_SPICOUNT
-} CC2650_SPIName;
 
 /*!
  *  @def    CC2650_UARTName
@@ -164,17 +122,8 @@ typedef enum CC2650_UARTName {
     CC2650_UARTCOUNT
 } CC2650_UARTName;
 
-/*!
- *  @def    CC2650_UdmaName
- *  @brief  Enum of DMA buffers
- */
-typedef enum CC2650_UdmaName {
-    CC2650_UDMA0 = 0,
-    CC2650_UDMACOUNT
-} CC2650_UdmaName;
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CC2650EM_H__ */
+#endif /* __BOARD_H__ */

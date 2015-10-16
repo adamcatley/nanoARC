@@ -164,7 +164,7 @@
 		<link>
 			<name>ICallBLE/bleUserConfig.c</name>
 			<type>1</type>
-			<locationURI>PARENT-5-ORG_PROJ_DIR/ICall/Application/bleUserConfig.c</locationURI>
+			<locationURI>PROJECT_LOC/Application/bleUserConfig.c</locationURI>
 		</link>
 		<link>
 			<name>ICallBLE/bleUserConfig.h</name>

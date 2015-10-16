@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Texas Instruments Incorporated
+ * Copyright (c) 2015, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 /*
  *  ====================== Board.c =============================================
  *  This file is responsible for setting up the board specific items for the
- *  SRF06EB with the CC2650EM_7ID board.
+ *  nanoARC Mainboard. This board file is valid for PCB version 1
  */
 
 
@@ -59,23 +59,29 @@
  *  When a pin is allocated and then de-allocated, it will revert to the state
  *  configured in this table.
 */
-PIN_Config BoardGpioInitTable[] = {
 
-    Board_LED1       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW   | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
-    Board_LED2       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW   | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
-    Board_LED3       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW   | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
-    Board_LED4       | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW   | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* LED initially off             */
-    Board_KEY_SELECT | PIN_INPUT_EN  | PIN_PULLUP | PIN_HYSTERESIS,                             /* Button is active low          */
-    Board_KEY_UP     | PIN_INPUT_EN  | PIN_PULLUP | PIN_HYSTERESIS,                             /* Button is active low          */
-    Board_KEY_DOWN   | PIN_INPUT_EN  | PIN_PULLUP | PIN_HYSTERESIS,                             /* Button is active low          */
-    Board_KEY_LEFT   | PIN_INPUT_EN  | PIN_PULLUP | PIN_HYSTERESIS,                             /* Button is active low          */
-    Board_KEY_RIGHT  | PIN_INPUT_EN  | PIN_PULLUP | PIN_HYSTERESIS,                             /* Button is active low          */
-    Board_3V3_EN     | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW    | PIN_PUSHPULL,                     /* 3V3 domain off initially      */
-    Board_LCD_MODE   | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH   | PIN_PUSHPULL,                     /* LCD pin high initially        */
-    Board_LCD_RST    | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH   | PIN_PUSHPULL,                     /* LCD pin high initially        */
-    Board_LCD_CSN    | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH   | PIN_PUSHPULL,                     /* LCD pin high initially        */
-    Board_UART_TX    | PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH   | PIN_PUSHPULL,                     /* UART TX pin at inactive level */
-    PIN_TERMINATE                                                                               /* Terminate list                */
+/*
+ *  ========================= IO driver initialization =========================
+ *  From main, PIN_init(BoardGpioInitTable) should be called to setup safe
+ *  settings for this board.
+ *  When a pin is allocated and then de-allocated, it will revert to the state
+ *  configured in this table
+*/
+PIN_Config BoardGpioInitTable[] = {
+	Board_MOTOR1_PH		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* Motor controller initially off */
+	Board_MOTOR1_EN		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* Motor controller initially off */
+	Board_MOTOR2_PH		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* Motor controller initially off */
+	Board_MOTOR2_EN		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* Motor controller initially off */
+
+	Board_GPIO_0		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* GPIO use initially output */
+	Board_GPIO_1		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* GPIO use initially output */
+	Board_GPIO_2		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* GPIO use initially output */
+	Board_GPIO_3		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* GPIO use initially output */
+	Board_GPIO_4		| PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MAX,     /* GPIO use initially output */
+
+	Board_BATTERY		| PIN_INPUT_EN | PIN_NOPULL,											 /* Battery voltage sense	   */
+
+    PIN_TERMINATE
 };
 /*============================================================================*/
 
@@ -114,150 +120,4 @@ const UART_Config UART_config[] = {
 };
 /*
  *  ============================= UART end =====================================
-*/
-
-/*
- *  ============================= UDMA begin ===================================
-*/
-/* Place into subsections to allow the TI linker to remove items properly */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(UDMACC26XX_config, ".const:UDMACC26XX_config")
-#pragma DATA_SECTION(udmaHWAttrs, ".const:udmaHWAttrs")
-#endif
-
-/* Include drivers */
-#include <ti/drivers/dma/UDMACC26XX.h>
-
-/* UDMA objects */
-UDMACC26XX_Object UdmaObjects[CC2650_UDMACOUNT];
-
-/* UDMA configuration structure */
-const UDMACC26XX_HWAttrs udmaHWAttrs[CC2650_UDMACOUNT] = {
-    { UDMA0_BASE, INT_UDMAERR, PERIPH_UDMA },
-};
-
-/* UDMA configuration structure */
-const UDMACC26XX_Config UDMACC26XX_config[] = {
-    {&UdmaObjects[0], &udmaHWAttrs[0]},
-    {NULL, NULL},
-};
-/*
- *  ============================= UDMA end =====================================
-*/
-
-/*
- *  ========================== SPI DMA begin ===================================
-*/
-/* Place into subsections to allow the TI linker to remove items properly */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(SPI_config, ".const:SPI_config")
-#pragma DATA_SECTION(spiCC26XXDMAHWAttrs, ".const:spiCC26XXDMAHWAttrs")
-#endif
-
-/* Include drivers */
-#include <ti/drivers/spi/SPICC26XXDMA.h>
-
-/* SPI objects */
-SPICC26XX_Object spiCC26XXDMAObjects[CC2650_SPICOUNT];
-
-/* SPI configuration structure, describing which pins are to be used */
-const SPICC26XX_HWAttrs spiCC26XXDMAHWAttrs[CC2650_SPICOUNT] = {
-    {   /* SRF06EB_CC2650_SPI0 */
-        .baseAddr = SSI0_BASE,
-        .intNum = INT_SSI0,
-        .defaultTxBufValue = 0,
-        .powerMngrId = PERIPH_SSI0,
-        .rxChannelBitMask = 1<<UDMA_CHAN_SSI0_RX,
-        .txChannelBitMask = 1<<UDMA_CHAN_SSI0_TX,
-        .mosiPin = Board_SPI0_MOSI,
-        .misoPin = Board_SPI0_MISO,
-        .clkPin = Board_SPI0_CLK,
-        .csnPin = PIN_UNASSIGNED     /* Note: LCD uses SPI0 */
-    },
-    {   /* SRF06EB_CC2650_SPI1 */
-        .baseAddr = SSI1_BASE,
-        .intNum = INT_SSI1,
-        .defaultTxBufValue = 0,
-        .powerMngrId = PERIPH_SSI1,
-        .rxChannelBitMask  = 1<<UDMA_CHAN_SSI1_RX,
-        .txChannelBitMask  = 1<<UDMA_CHAN_SSI1_TX,
-        .mosiPin = Board_SPI1_MOSI,
-        .misoPin = Board_SPI1_MISO,
-        .clkPin = Board_SPI1_CLK,
-        .csnPin = PIN_UNASSIGNED
-    }
-};
-
-/* SPI configuration structure */
-const SPI_Config SPI_config[] = {
-    /* SRF06EB_CC2650_SPI0 */
-    {&SPICC26XXDMA_fxnTable, &spiCC26XXDMAObjects[0], &spiCC26XXDMAHWAttrs[0]},
-    /* SRF06EB_CC2650_SPI1 */
-    {&SPICC26XXDMA_fxnTable, &spiCC26XXDMAObjects[1], &spiCC26XXDMAHWAttrs[1]},
-    {NULL, NULL, NULL},
-};
-/*
- *  ========================== SPI DMA end =====================================
-*/
-
-
-/*
- *  ========================== LCD begin =======================================
-*/
-/* Place into subsections to allow the TI linker to remove items properly */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(LCD_config, ".const:LCD_config")
-#pragma DATA_SECTION(lcdHWAttrs, ".const:lcdHWAttrs")
-#endif
-
-/* Include drivers */
-#include <ti/drivers/lcd/LCDDogm1286.h>
-
-/* LCD object */
-LCD_Object lcdObject;
-
-/* LCD hardware attribute structure */
-const LCD_HWAttrs lcdHWAttrs = {
-    .LCD_initCmd = &LCD_initCmd,
-    .lcdResetPin = Board_LCD_RST,       /* LCD reset pin */
-    .lcdModePin = Board_LCD_MODE,       /* LCD mode pin */
-    .lcdCsnPin = Board_LCD_CSN,         /* LCD CSn pin */
-    .spiIndex = Board_SPI0
-};
-
-/* LCD configuration structure */
-const LCD_Config LCD_config = {&lcdObject, &lcdHWAttrs};
-/*
- *  ========================== LCD end =========================================
-*/
-
-/*
- *  ========================== Crypto begin =======================================
- *  NOTE: The Crypto implementaion should be considered experimental and not validated!
-*/
-/* Place into subsections to allow the TI linker to remove items properly */
-#if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(CryptoCC26XX_config, ".const:CryptoCC26XX_config")
-#pragma DATA_SECTION(cryptoCC26XXHWAttrs, ".const:cryptoCC26XXHWAttrs")
-#endif
-
-/* Include drivers */
-#include <ti/drivers/crypto/CryptoCC26XX.h>
-
-/* Crypto objects */
-CryptoCC26XX_Object cryptoCC26XXObjects[CC2650_CRYPTOCOUNT];
-
-/* Crypto configuration structure, describing which pins are to be used */
-const CryptoCC26XX_HWAttrs cryptoCC26XXHWAttrs[CC2650_CRYPTOCOUNT] = {
-    {CRYPTO_BASE, INT_CRYPTO, PERIPH_CRYPTO}
-};
-
-/* Crypto configuration structure */
-const CryptoCC26XX_Config CryptoCC26XX_config[] = {
-    {&cryptoCC26XXObjects[0], &cryptoCC26XXHWAttrs[0]},
-    {NULL, NULL}
-};
-
-/*
- *  ========================== Crypto end =========================================
 */

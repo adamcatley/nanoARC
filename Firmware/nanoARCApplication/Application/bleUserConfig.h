@@ -247,7 +247,12 @@ extern "C"
 //
 
 // RF Front End Mode and Bias Configuration
-#if defined( CC2650EM_7ID )
+#if defined( NANOARCV1 )
+
+  #define RF_FE_MODE_AND_BIAS           ( RF_FE_DIFFERENTIAL |                 \
+                                          RF_FE_INT_BIAS )
+
+#elif defined( CC2650EM_7ID )
 
   #define RF_FE_MODE_AND_BIAS           ( RF_FE_DIFFERENTIAL |                 \
                                           RF_FE_INT_BIAS )
@@ -263,7 +268,7 @@ extern "C"
                                           RF_FE_EXT_BIAS )
 #else // unknown device package
 
-#error "***BLE USER CONFIG BUILD ERROR*** Unknown package type!"
+#error "***BLE USER CONFIG BUILD ERROR*** Unknown package type in bleUserConfig"
 
 #endif // CC2650EM_7ID
 

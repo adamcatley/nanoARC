@@ -74,13 +74,10 @@
 #include "ICallBleAPIMSG.h"
 
 #include "util.h"
-#include "board_lcd.h"
 #include "board_key.h"
 #include "Board.h"
 
 #include "nanoARCApplication.h"
-
-#include <ti/drivers/lcd/LCDDogm1286.h>
 /*********************************************************************
  * CONSTANTS
  */
@@ -175,27 +172,15 @@ Char sbpTaskStack[SBP_TASK_STACK_SIZE];
 static uint8_t scanRspData[] =
 {
   // complete name
-  0x14,   // length of this data
+  0x08,   // length of this data
   GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-  0x53,   // 'S'
-  0x69,   // 'i'
-  0x6d,   // 'm'
-  0x70,   // 'p'
-  0x6c,   // 'l'
-  0x65,   // 'e'
-  0x42,   // 'B'
-  0x4c,   // 'L'
-  0x45,   // 'E'
-  0x50,   // 'P'
-  0x65,   // 'e'
-  0x72,   // 'r'
-  0x69,   // 'i'
-  0x70,   // 'p'
-  0x68,   // 'h'
-  0x65,   // 'e'
-  0x72,   // 'r'
+  0x6e,   // 'n'
   0x61,   // 'a'
-  0x6c,   // 'l'
+  0x6e,   // 'n'
+  0x6f,   // 'o'
+  0x41,   // 'A'
+  0x52,   // 'R'
+  0x43,   // 'C'
 
   // connection interval range
   0x05,   // length of this data
@@ -366,8 +351,6 @@ static void nanoARCApplication_init(void)
   Util_constructClock(&periodicClock, nanoARCApplication_clockHandler,
                       SBP_PERIODIC_EVT_PERIOD, 0, false, SBP_PERIODIC_EVT);
 
-  Board_openLCD();
-
   // Setup the GAP
   GAP_SetParamValue(TGAP_CONN_PAUSE_PERIPHERAL, DEFAULT_CONN_PAUSE_PERIPHERAL);
 
@@ -485,12 +468,12 @@ static void nanoARCApplication_init(void)
 
 #if defined FEATURE_OAD
 #if defined (HAL_IMAGE_A)
-  LCD_WRITE_STRING("BLE Peripheral A", LCD_PAGE0);
+
 #else
-  LCD_WRITE_STRING("BLE Peripheral B", LCD_PAGE0);
+
 #endif // HAL_IMAGE_A
 #else
-  LCD_WRITE_STRING("BLE Peripheral", LCD_PAGE0);
+
 #endif // FEATURE_OAD
 }
 
@@ -705,13 +688,13 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
         DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
 
         // Display device address
-        LCD_WRITE_STRING(Util_convertBdAddr2Str(ownAddress), LCD_PAGE1);
-        LCD_WRITE_STRING("Initialized", LCD_PAGE2);
+        //LCD_WRITE_STRING(Util_convertBdAddr2Str(ownAddress), LCD_PAGE1);
+        //LCD_WRITE_STRING("Initialized", LCD_PAGE2);
       }
       break;
 
     case GAPROLE_ADVERTISING:
-      LCD_WRITE_STRING("Advertising", LCD_PAGE2);
+      //LCD_WRITE_STRING("Advertising", LCD_PAGE2);
       break;
 
     case GAPROLE_CONNECTED:
@@ -722,8 +705,8 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
 
         Util_startClock(&periodicClock);
 
-        LCD_WRITE_STRING("Connected", LCD_PAGE2);
-        LCD_WRITE_STRING(Util_convertBdAddr2Str(peerAddress), LCD_PAGE3);
+        //LCD_WRITE_STRING("Connected", LCD_PAGE2);
+        //LCD_WRITE_STRING(Util_convertBdAddr2Str(peerAddress), LCD_PAGE3);
 
         #ifdef PLUS_BROADCASTER
           // Only turn advertising on for this state when we first connect
@@ -742,21 +725,17 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_CONNECTED_ADV:
-      LCD_WRITE_STRING("Connected Advertising", LCD_PAGE2);
+      //LCD_WRITE_STRING("Connected Advertising", LCD_PAGE2);
       break;
 
     case GAPROLE_WAITING:
       Util_stopClock(&periodicClock);
 
-      LCD_WRITE_STRING("Disconnected", LCD_PAGE2);
-
-      // Clear remaining lines
-      LCD_WRITE_STRING("", LCD_PAGE3);
-      LCD_WRITE_STRING("", LCD_PAGE4);
+     // LCD_WRITE_STRING("Disconnected", LCD_PAGE2);
       break;
 
     case GAPROLE_WAITING_AFTER_TIMEOUT:
-      LCD_WRITE_STRING("Timed Out", LCD_PAGE2);
+      //LCD_WRITE_STRING("Timed Out", LCD_PAGE2);
 
       #ifdef PLUS_BROADCASTER
         // Reset flag for next connection.
@@ -765,11 +744,11 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_ERROR:
-      LCD_WRITE_STRING("Error", LCD_PAGE2);
+      //LCD_WRITE_STRING("Error", LCD_PAGE2);
       break;
 
     default:
-      LCD_WRITE_STRING("", LCD_PAGE2);
+      //LCD_WRITE_STRING("", LCD_PAGE2);
       break;
   }
 
@@ -814,13 +793,13 @@ static void nanoARCApplication_processCharValueChangeEvt(uint8_t paramID)
     case SIMPLEPROFILE_CHAR1:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
 
-      LCD_WRITE_STRING_VALUE("Char 1:", (uint16_t)newValue, 10, LCD_PAGE4);
+      //LCD_WRITE_STRING_VALUE("Char 1:", (uint16_t)newValue, 10, LCD_PAGE4);
       break;
 
     case SIMPLEPROFILE_CHAR3:
       SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
 
-      LCD_WRITE_STRING_VALUE("Char 3:", (uint16_t)newValue, 10, LCD_PAGE4);
+      //LCD_WRITE_STRING_VALUE("Char 3:", (uint16_t)newValue, 10, LCD_PAGE4);
       break;
 
     default:
