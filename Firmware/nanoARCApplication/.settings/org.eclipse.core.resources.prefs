@@ -1,8 +1,6 @@
 eclipse.preferences.version=1
 encoding//FlashROM/Application/subdir_rules.mk=UTF-8
 encoding//FlashROM/Application/subdir_vars.mk=UTF-8
-encoding//FlashROM/Drivers/LCD/subdir_rules.mk=UTF-8
-encoding//FlashROM/Drivers/LCD/subdir_vars.mk=UTF-8
 encoding//FlashROM/Drivers/PIN/subdir_rules.mk=UTF-8
 encoding//FlashROM/Drivers/PIN/subdir_vars.mk=UTF-8
 encoding//FlashROM/Drivers/SPI/subdir_rules.mk=UTF-8

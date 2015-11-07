@@ -34,3 +34,4 @@
 
 # Build Files
 FlashROM/
+.config/
