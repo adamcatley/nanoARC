@@ -60,7 +60,7 @@
 #include "gapgattserver.h"
 #include "gattservapp.h"
 #include "devinfoservice.h"
-#include "simpleGATTprofile.h"
+#include "controlservice.h"
 
 #ifdef FEATURE_OAD
 #include "oad_target.h"
@@ -81,20 +81,20 @@
 /*********************************************************************
  * CONSTANTS
  */
-// Advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          160
+// Advertising interval when device is discoverable (units of 625us, 800=500ms)
+#define DEFAULT_ADVERTISING_INTERVAL          800
 
 // Limited discoverable mode advertises for 30.72s, and then stops
 // General discoverable mode advertises indefinitely
 #define DEFAULT_DISCOVERABLE_MODE             GAP_ADTYPE_FLAGS_GENERAL
 
-// Minimum connection interval (units of 1.25ms, 80=100ms) if automatic
+// Minimum connection interval (units of 1.25ms, 18=22.5ms) if automatic
 // parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     80
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     18
 
-// Maximum connection interval (units of 1.25ms, 800=1000ms) if automatic
+// Maximum connection interval (units of 1.25ms, 80=100ms) if automatic
 // parameter update request is enabled
-#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     800
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL     80
 
 // Slave latency to use if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_SLAVE_LATENCY         0
@@ -116,6 +116,16 @@
 // Task configuration
 #define SBP_TASK_PRIORITY                     1
 
+//Location in flash memory containing device MAC address
+#define MAC_ADDR_MEMORY_LOCATION 0x500012E8
+
+//Device modes
+#define DEVICE_MODE_TRANSMITTER 0x01
+#define DEVICE_MODE_RECEIVER 0x02
+
+//Hard coded device mode based on lowest MAC address byte
+#define RECEIVER_ADDR 0x02 //First assembled Spintop 5
+#define TRANSMITTER_ADDR 0x05 //First assembled nanoARCv1
 
 #ifndef SBP_TASK_STACK_SIZE
 #define SBP_TASK_STACK_SIZE                   644
@@ -185,9 +195,9 @@ static uint8_t scanRspData[] =
   // connection interval range
   0x05,   // length of this data
   GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE,
-  LO_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),   // 100ms
+  LO_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),   // 22.5ms
   HI_UINT16(DEFAULT_DESIRED_MIN_CONN_INTERVAL),
-  LO_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),   // 1s
+  LO_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),   // 100ms
   HI_UINT16(DEFAULT_DESIRED_MAX_CONN_INTERVAL),
 
   // Tx power level
@@ -215,18 +225,21 @@ static uint8_t advertData[] =
   LO_UINT16(OAD_SERVICE_UUID),
   HI_UINT16(OAD_SERVICE_UUID)
 #else
-  LO_UINT16(SIMPLEPROFILE_SERV_UUID),
-  HI_UINT16(SIMPLEPROFILE_SERV_UUID)
+  LO_UINT16(CONTROLSERVICE_SERV_UUID),
+  HI_UINT16(CONTROLSERVICE_SERV_UUID)
 #endif //!FEATURE_OAD
 };
 
 // GAP GATT Attributes
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "nanoARC";
+uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "nanoARC"; //Used in init
 
 #if FEATURE_OAD
 // Event data from OAD profile.
 static oadTargetWrite_t oadWriteEventData;
 #endif //FEATURE_OAD
+
+//Device mode, whether device is a transmitter or receiver
+static uint8_t deviceMode = 0;
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -274,9 +287,9 @@ static gapBondCBs_t nanoARCApplication_BondMgrCBs =
   NULL  // Pairing / Bonding state Callback (not used by application)
 };
 
-// Simple GATT Profile Callbacks
+// Control Service Callbacks
 #ifndef FEATURE_OAD
-static simpleProfileCBs_t nanoARCApplication_simpleProfileCBs =
+static controlServiceCBs_t nanoARCApplication_controlServiceCBs =
 {
   nanoARCApplication_charValueChangeCB // Characteristic value change callback
 };
@@ -408,7 +421,7 @@ static void nanoARCApplication_init(void)
   // Setup the GAP Bond Manager
   {
     uint32_t passkey = 0; // passkey "000000"
-    uint8_t pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+    uint8_t pairMode = GAPBOND_IO_CAP_NO_INPUT_NO_OUTPUT;
     uint8_t mitm = TRUE;
     uint8_t ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
     uint8_t bonding = TRUE;
@@ -427,7 +440,7 @@ static void nanoARCApplication_init(void)
   DevInfo_AddService();                        // Device Information Service
 
 #ifndef FEATURE_OAD
-  SimpleProfile_AddService(GATT_ALL_SERVICES); // Simple GATT Profile
+  controlService_AddService(GATT_ALL_SERVICES); // Control Service
 #endif //!FEATURE_OAD
 
 #ifdef FEATURE_OAD
@@ -436,28 +449,16 @@ static void nanoARCApplication_init(void)
 #endif
 
 #ifndef FEATURE_OAD
-  // Setup the SimpleProfile Characteristic Values
+  // Setup the Control Service Characteristic Values
   {
-    uint8_t charValue1 = 1;
-    uint8_t charValue2 = 2;
-    uint8_t charValue3 = 3;
-    uint8_t charValue4 = 4;
-    uint8_t charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
+    uint8_t charValue1[CONTROLSERVICE_CHAR1_LEN] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR1, sizeof(uint8_t),
-                               &charValue1);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR2, sizeof(uint8_t),
-                               &charValue2);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR3, sizeof(uint8_t),
-                               &charValue3);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
-                               &charValue4);
-    SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN,
-                               charValue5);
+    controlService_SetParameter(CONTROLSERVICE_CHAR1, CONTROLSERVICE_CHAR1_LEN,
+                               charValue1);
   }
 
-  // Register callback with SimpleGATTprofile
-  SimpleProfile_RegisterAppCBs(&nanoARCApplication_simpleProfileCBs);
+  // Register callback with Control Service
+  controlService_RegisterAppCBs(&nanoARCApplication_controlServiceCBs);
 #endif //!FEATURE_OAD
 
   // Start the Device
@@ -488,6 +489,34 @@ static void nanoARCApplication_init(void)
  */
 static void nanoARCApplication_taskFxn(UArg a0, UArg a1)
 {
+	//Check whether peripheral or central device
+    //Read MAC address direct from memory
+    uint8_t ownAddress[B_ADDR_LEN];
+    VOID memcpy(ownAddress, (void*)MAC_ADDR_MEMORY_LOCATION, B_ADDR_LEN);
+
+    switch (ownAddress[B_ADDR_LEN - 1]){
+    	case RECEIVER_ADDR:
+    		deviceMode = DEVICE_MODE_RECEIVER;
+    		strcpy((char*)attDeviceName, "nanoARC RX-02"); //21 chars max
+    		break;
+    	case TRANSMITTER_ADDR:
+    		deviceMode = DEVICE_MODE_TRANSMITTER;
+    		strcpy((char*)attDeviceName, "nanoARC TX-05"); //21 chars max
+    		break;
+    	default:
+    		deviceMode = DEVICE_MODE_RECEIVER;
+    		strcpy((char*)attDeviceName, "nanoARC RX-default"); //21 chars max
+    		break;
+    }
+
+    // Initialize application
+    if (deviceMode == DEVICE_MODE_TRANSMITTER){
+    	  //nanoARCApplication_initCentral();
+    }
+    else{
+    	  //nanoARCApplication_initPeripheral();
+    }
+
   // Initialize application
   nanoARCApplication_init();
 
@@ -688,13 +717,15 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
         DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
 
         // Display device address
-        //LCD_WRITE_STRING(Util_convertBdAddr2Str(ownAddress), LCD_PAGE1);
-        //LCD_WRITE_STRING("Initialized", LCD_PAGE2);
+        char* address = Util_convertBdAddr2Str(ownAddress);
+        System_printf("Initialized: %s\n", address);
+        System_flush();
       }
       break;
 
     case GAPROLE_ADVERTISING:
-      //LCD_WRITE_STRING("Advertising", LCD_PAGE2);
+      System_printf("Advertising\n");
+      System_flush();
       break;
 
     case GAPROLE_CONNECTED:
@@ -705,8 +736,9 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
 
         Util_startClock(&periodicClock);
 
-        //LCD_WRITE_STRING("Connected", LCD_PAGE2);
-        //LCD_WRITE_STRING(Util_convertBdAddr2Str(peerAddress), LCD_PAGE3);
+        char* address = Util_convertBdAddr2Str(peerAddress);
+        System_printf("Connected: %s\n", address);
+        System_flush();
 
         #ifdef PLUS_BROADCASTER
           // Only turn advertising on for this state when we first connect
@@ -725,17 +757,20 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_CONNECTED_ADV:
-      //LCD_WRITE_STRING("Connected Advertising", LCD_PAGE2);
+      System_printf("Connected Advertising\n");
+      System_flush();
       break;
 
     case GAPROLE_WAITING:
       Util_stopClock(&periodicClock);
 
-     // LCD_WRITE_STRING("Disconnected", LCD_PAGE2);
+      System_printf("Disconnected\n");
+      System_flush();
       break;
 
     case GAPROLE_WAITING_AFTER_TIMEOUT:
-      //LCD_WRITE_STRING("Timed Out", LCD_PAGE2);
+        System_printf("Timed Out\n");
+        System_flush();
 
       #ifdef PLUS_BROADCASTER
         // Reset flag for next connection.
@@ -744,11 +779,13 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
       break;
 
     case GAPROLE_ERROR:
-      //LCD_WRITE_STRING("Error", LCD_PAGE2);
+      System_printf("Error\n");
+      System_flush();
       break;
 
     default:
-      //LCD_WRITE_STRING("", LCD_PAGE2);
+      System_printf("Default\n");
+      System_flush();
       break;
   }
 
@@ -760,7 +797,7 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
 /*********************************************************************
  * @fn      nanoARCApplication_charValueChangeCB
  *
- * @brief   Callback from Simple Profile indicating a characteristic
+ * @brief   Callback from Control Service indicating a characteristic
  *          value change.
  *
  * @param   paramID - parameter ID of the value that was changed.
@@ -776,7 +813,7 @@ static void nanoARCApplication_charValueChangeCB(uint8_t paramID)
 /*********************************************************************
  * @fn      nanoARCApplication_processCharValueChangeEvt
  *
- * @brief   Process a pending Simple Profile characteristic value change
+ * @brief   Process a pending Control Service characteristic value change
  *          event.
  *
  * @param   paramID - parameter ID of the value that was changed.
@@ -786,20 +823,21 @@ static void nanoARCApplication_charValueChangeCB(uint8_t paramID)
 static void nanoARCApplication_processCharValueChangeEvt(uint8_t paramID)
 {
 #ifndef FEATURE_OAD
-  uint8_t newValue;
+  uint8_t newValue[CONTROLSERVICE_CHAR1_LEN];
 
   switch(paramID)
   {
-    case SIMPLEPROFILE_CHAR1:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR1, &newValue);
+    case CONTROLSERVICE_CHAR1:
+      controlService_GetParameter(CONTROLSERVICE_CHAR1, &newValue);
 
-      //LCD_WRITE_STRING_VALUE("Char 1:", (uint16_t)newValue, 10, LCD_PAGE4);
-      break;
+      int16_t channel1 = newValue[0] << 8;
+      channel1 |= newValue[1];
 
-    case SIMPLEPROFILE_CHAR3:
-      SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3, &newValue);
+      int16_t channel2 = newValue[2] << 8;
+      channel2 |= newValue[3];
 
-      //LCD_WRITE_STRING_VALUE("Char 3:", (uint16_t)newValue, 10, LCD_PAGE4);
+      System_printf("Char 1 - X: %d, Y: %d\n", (int16_t)channel1, (int16_t)channel2);
+      System_flush();
       break;
 
     default:
@@ -825,6 +863,7 @@ static void nanoARCApplication_processCharValueChangeEvt(uint8_t paramID)
 static void nanoARCApplication_performPeriodicTask(void)
 {
 #ifndef FEATURE_OAD
+	/*
   uint8_t valueToCopy;
 
   // Call to retrieve the value of the third characteristic in the profile
@@ -837,6 +876,7 @@ static void nanoARCApplication_performPeriodicTask(void)
     SimpleProfile_SetParameter(SIMPLEPROFILE_CHAR4, sizeof(uint8_t),
                                &valueToCopy);
   }
+*/
 #endif //!FEATURE_OAD
 }
 
