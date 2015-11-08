@@ -78,6 +78,7 @@
 #include "Board.h"
 
 #include "nanoARCApplication.h"
+#include "motors.h"
 /*********************************************************************
  * CONSTANTS
  */
@@ -518,7 +519,8 @@ static void nanoARCApplication_taskFxn(UArg a0, UArg a1)
     }
 
   // Initialize application
-  nanoARCApplication_init();
+  nanoARCApplication_init(); //Bluetooth init
+  MotorInitialisePrimary();
 
   // Application main loop
   for (;;)
@@ -764,6 +766,11 @@ static void nanoARCApplication_processStateChangeEvt(gaprole_States_t newState)
     case GAPROLE_WAITING:
       Util_stopClock(&periodicClock);
 
+      //Stop motors on connection loss to maintain control of robot
+      //MotorSetSpeed(Motor1, 0);
+      //MotorSetSpeed(Motor2, 0);
+      //TODO: stop ESC too
+
       System_printf("Disconnected\n");
       System_flush();
       break;
@@ -830,14 +837,31 @@ static void nanoARCApplication_processCharValueChangeEvt(uint8_t paramID)
     case CONTROLSERVICE_CHAR1:
       controlService_GetParameter(CONTROLSERVICE_CHAR1, &newValue);
 
+      //Reconstruct signed 16 bit value from bytes
       int16_t channel1 = newValue[0] << 8;
       channel1 |= newValue[1];
 
       int16_t channel2 = newValue[2] << 8;
       channel2 |= newValue[3];
 
-      System_printf("Char 1 - X: %d, Y: %d\n", (int16_t)channel1, (int16_t)channel2);
+      //TODO: Mixing
+
+      //Scale from signed 16 bit to unsigned 8 bit
+      uint8_t speed1 = (uint8_t)(abs(channel1)/128);
+      uint8_t speed2 = (uint8_t)(abs(channel2)/128);
+
+      System_printf("Char 1 - X: %d (%d), Y: %d (%d)\n", (int16_t)channel1, (uint8_t)speed1, (int16_t)channel2, (uint8_t)speed2);
       System_flush();
+
+      //Update motors
+      if (channel1 > 0) MotorSetForward(Motor1);
+      else MotorSetBackward(Motor1);
+
+      if (channel2 > 0) MotorSetForward(Motor2);
+      else MotorSetBackward(Motor2);
+
+      MotorSetSpeed(Motor1, speed1);
+      MotorSetSpeed(Motor2, speed2);
       break;
 
     default:

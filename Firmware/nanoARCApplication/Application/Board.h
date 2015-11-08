@@ -94,10 +94,10 @@ extern PIN_Config BoardGpioInitTable[];
 #define Board_UART_RX				Board_GPIO_2
 
 //Motor driver expansion board
-#define Board_MOTOR1_PH             Board_GPIO_1
-#define Board_MOTOR1_EN             Board_GPIO_2
-#define Board_MOTOR2_PH             Board_GPIO_3
-#define Board_MOTOR2_EN             Board_GPIO_4
+#define Board_MOTOR3_PH             Board_GPIO_1
+#define Board_MOTOR3_EN             Board_GPIO_2
+#define Board_MOTOR4_PH             Board_GPIO_3
+#define Board_MOTOR4_EN             Board_GPIO_4
 
 /* Analog */
 #define Board_BATTERY				IOID_9

@@ -53,7 +53,7 @@ bool MotorInitialiseSecondary(bool track);
 void MotorSetSpeed(Motor motor, uint8_t speed);
 void MotorSetDirection(Motor motor, MotorDirection dir);
 void MotorSetForward(Motor motor);
-void MotorSetForward(Motor motor);
+void MotorSetBackward(Motor motor);
 
 
 #endif /* MOTORS_H_ */

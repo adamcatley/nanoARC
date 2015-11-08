@@ -67,6 +67,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Application/motors.c</name>
+			<type>1</type>
+			<locationURI>PROJECT_LOC/Application/motors.c</locationURI>
+		</link>
+		<link>
+			<name>Application/motors.h</name>
+			<type>1</type>
+			<locationURI>PROJECT_LOC/Application/motors.h</locationURI>
+		</link>
+		<link>
 			<name>Application/nanoARCApplication.c</name>
 			<type>1</type>
 			<locationURI>PROJECT_LOC/Application/nanoARCApplication.c</locationURI>
